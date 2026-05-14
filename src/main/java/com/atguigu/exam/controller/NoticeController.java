@@ -95,6 +95,7 @@ public class NoticeController {
     @PutMapping("/update")  // 处理PUT请求
     @Operation(summary = "更新公告信息", description = "修改公告的内容、标题、类型等信息")  // API描述
     public Result<String> updateNotice(@RequestBody Notice notice) {
+
         return noticeService.updateNotice(notice);
     }
     
