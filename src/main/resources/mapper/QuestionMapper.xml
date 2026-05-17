@@ -3,5 +3,51 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.atguigu.exam.mapper.QuestionMapper">
-
+    <resultMap id="questionMap" type="com.atguigu.exam.entity.Question">
+<!--  第一层：question的属性-->
+<!--        主键字段-->
+        <id property="id" column="id"/>
+<!--        对一，答案-->
+        <association property="answer" javaType="com.atguigu.exam.entity.QuestionAnswer">
+            <id property="id" column="qa_id"/>
+<!-- 开启 嵌套映射，名称一样可省略          省略question_id answer keywords-->
+            <result property="createTime" column="qa_create_time"/>
+            <result property="updateTime" column="qa_update_time"/>
+            <result property="isDeleted" column="qa_is_deleted"/>
+        </association>
+<!--        对多：选项 分布查询：触发第二次查询
+            column:向下传递的列（当前查询结果中·向下传递的列名）
+            select:触发第二次查询mapper的全限定符方法名
+-->
+        <collection property="choices" ofType="com.atguigu.exam.entity.QuestionChoice"
+          column="id" select="com.atguigu.exam.mapper.QuestionChoiceMapper.selectListByQuestionId"
+        />
+    </resultMap>
+    <select id="selectQuestionPage" resultMap="questionMap">
+        select qs.*,
+        qa.id qa_id,
+        qa.question_id,
+        qa.answer,
+        qa.keywords,
+        qa.create_time qa_create_time,
+        qa.update_time qa_update_time,
+        qa.is_deleted qa_is_deleted
+        from questions qs join question_answers qa on qs.id = qa.question_id
+        where qs.is_deleted=0
+        <if test="questionQueryVo!=null">
+            <if test="questionQueryVo.categoryId!=null">
+                and qs.category_id=#{questionQueryVo.categoryId}
+            </if>
+            <if test="questionQueryVo.difficulty!=null and questionQueryVo.difficulty!=''">
+                and qs.difficulty=#{questionQueryVo.difficulty}
+            </if>
+            <if test="questionQueryVo.type!=null and questionQueryVo.type!=''">
+                and qs.type= #{questionQueryVo.type}
+            </if>
+            <if test="questionQueryVo.keyword!=null and questionQueryVo.keyword!=''">
+                and qs.title like concat('%',#{questionQueryVo.keyword},'%')
+            </if>
+        </if>
+        order by qs.create_time desc
+    </select>
 </mapper>

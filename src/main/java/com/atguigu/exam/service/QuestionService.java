@@ -1,6 +1,8 @@
 package com.atguigu.exam.service;
 
 import com.atguigu.exam.entity.Question;
+import com.atguigu.exam.vo.QuestionQueryVo;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -29,6 +31,48 @@ import java.util.List;
  * @version 1.0
  */
 public interface QuestionService extends IService<Question> {
+    /**
+     * 分页查询题目列表方案二：分布查询
+     * @param questionPage
+     * @param questionQueryVo
+     */
+    void getQuestionList(Page<Question> questionPage, QuestionQueryVo questionQueryVo);
+    /**
+     * 分页查询题目列表方案三：java代码处理
+     * @param questionPage
+     * @param questionQueryVo
+     */
+    void getQuestionListByStream(Page<Question> questionPage, QuestionQueryVo questionQueryVo);
 
+    /**
+     * 查询题目详情
+     * @param id
+     * @return
+     */
+    Question queryQuestionById(Long id);
+    /**
+     * 保存题目
+     * @param question
+     */
+    void saveQuestion(Question question);
 
-} 
+    /**
+     * 修改题目
+     * @param id
+     * @param question
+     */
+    void updateQuestion(Long id, Question question);
+
+    /**
+     * 删除题目
+     * @param id
+     */
+    void removeQuestion(Long id);
+
+    /**
+     * 查询热门题目
+     * @param size
+     * @return
+     */
+    List<Question> getPopularQuestions(Integer size);
+}
