@@ -48,3 +48,10 @@ logging:
   level:
     root: info
 
+kimi-api:
+  api-key: sk-0C4m2GNiqYPcrzjMUaCMtvNQrQeKq8HJzksopJLKvHYWsQZl
+  base-url: https://api.moonshot.cn/v1/chat/completions
+  model: moonshot-v1-32k
+  max-tokens: 8192
+  temperature: 0.3
+

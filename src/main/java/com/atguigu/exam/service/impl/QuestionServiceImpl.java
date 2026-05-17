@@ -1,24 +1,33 @@
 package com.atguigu.exam.service.impl;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.atguigu.exam.common.CacheConstants;
 import com.atguigu.exam.entity.PaperQuestion;
 import com.atguigu.exam.entity.Question;
 import com.atguigu.exam.entity.QuestionAnswer;
 import com.atguigu.exam.entity.QuestionChoice;
 import com.atguigu.exam.mapper.*;
+import com.atguigu.exam.service.KimiAiService;
 import com.atguigu.exam.service.QuestionService;
+import com.atguigu.exam.utils.ExcelUtil;
 import com.atguigu.exam.utils.RedisUtils;
+import com.atguigu.exam.vo.AiGenerateRequestVo;
+import com.atguigu.exam.vo.QuestionImportVo;
 import com.atguigu.exam.vo.QuestionQueryVo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,6 +48,8 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     private RedisUtils redisUtils;
     @Autowired
     private PaperQuestionMapper paperQuestionMapper;
+    @Autowired
+    private KimiAiService kimiAiService;
     /**
      * 分页查询题目列表方案二：分布查询
      * @param questionPage
@@ -289,5 +300,124 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 //        给题目进行选项和答案的赋值
         fullQuestionChoiceAndAnswer(popularQuestions);
         return  popularQuestions;
+    }
+    /**
+     * 预览导入的Excel数据
+     * @param file
+     * @return
+     */
+    @Override
+    public List<QuestionImportVo> previewExcel(MultipartFile file) throws IOException {
+//        校验文件是否为空和格式是否正确
+        if (file.isEmpty() || !file.getOriginalFilename().endsWith("xlsx")&&!file.getOriginalFilename().endsWith("xls") ) {
+            throw new RuntimeException("请选择正确的文件");
+        }
+//        使用工具类解析文件拿到对应的vo集合
+        List<QuestionImportVo> questionImportVos = ExcelUtil.parseExcel(file);
+//        返回对应的结果
+        return questionImportVos;
+    }
+    /**
+     * 导入题目
+     * @param questions
+     * @return
+     */
+    @Override
+    public String importQuestions(List<QuestionImportVo> questions) {
+//        1.将前端传递的预览数据集合List<QuestionImportVo>questionImportVos进行非空判断
+        if (ObjectUtils.isEmpty(questions)) {
+            return "导入失败，请选择文件,该文件为空";
+        }
+//        2.编写服务降级的代码
+        int successCount = 0;//成功的题目数量
+        for(QuestionImportVo questionImportVo:questions){
+            try {
+//        3.try->questionImportVo->question进行题目保存，复用题目保存的业务
+                Question question = new Question();
+                BeanUtils.copyProperties(questionImportVo,question);
+                if("ChOICE".equals(questionImportVo.getType())){
+                    List<QuestionChoice> choices =new ArrayList<>(questionImportVo.getChoices().size());
+                    for(QuestionImportVo.ChoiceImportDto choiceImport:questionImportVo.getChoices()){
+                        QuestionChoice choice = new QuestionChoice();
+                        choice.setContent(choiceImport.getContent());
+                        choice.setIsCorrect(choiceImport.getIsCorrect());
+                        choice.setSort(choiceImport.getSort());
+                        choice.setQuestionId(question.getId());
+                        choices.add(choice);
+                    }
+                    question.setChoices(choices);
+                }
+                   QuestionAnswer questionAnswer = new QuestionAnswer();
+                //如果是判断题：questionAnswer.getAnswer() true false是小写，数据库中存储的是大写 前端没有忽略大小写
+                if("JUDGE".equals(questionImportVo.getType())){
+                    questionAnswer.setAnswer(questionImportVo.getAnswer().toUpperCase());
+                }else {
+                    questionAnswer.setAnswer(questionImportVo.getAnswer());
+                }
+                  questionAnswer.setKeywords(questionImportVo.getKeywords());
+                  question.setAnswer(questionAnswer);
+                this.saveQuestion(question);//保存题目
+                  successCount++;//成功的题目数量+1
+                }catch (Exception e){
+                log.error("导入题目失败：{}",questionImportVo.getTitle());
+            }
+        }
+//        4.拼接返回的字符串
+        String result = "成功导入" + successCount + "条数据";
+        return result;
+    }
+    /**
+     * 通过AI生成题目
+     * @param request
+     * @return
+     */
+    @Override
+    public List<QuestionImportVo> generateQuestionsByAi(AiGenerateRequestVo request) {
+        //1生成对应的提示词
+        String prompt = kimiAiService.buildPrompt(request);
+        log.debug("生成提示词：{}",prompt);
+        //2调用AI接口
+        String response = kimiAiService.callKimiAi(prompt);
+        //3解析AI返回的json数据
+        //3.1判定开始（```json）和结束(```)的字符串位置
+        int start = response.indexOf("```json");
+        int end = response.lastIndexOf("```");
+        if (start != -1 && end != -1&& end > start) {
+            //start + 7是排除```json本身的内容
+            String json = response.substring(start + 7, end);
+            JSONObject jsonObject = JSONObject.parseObject(json);
+            JSONArray questions = jsonObject.getJSONArray("questions");
+            List<QuestionImportVo> questionImportVos =new ArrayList<>();
+            for(int i = 0;i < questions.size();i++){
+                JSONObject itemObject = questions.getJSONObject(i);
+                QuestionImportVo questionImportVo = new QuestionImportVo();
+                questionImportVo.setTitle(itemObject.getString("title"));
+                questionImportVo.setType(itemObject.getString("type"));
+                questionImportVo.setMulti(itemObject.getBoolean("multi"));
+                questionImportVo.setCategoryId(request.getCategoryId());
+                questionImportVo.setDifficulty(itemObject.getString("difficulty"));
+                questionImportVo.setScore(itemObject.getInteger("score"));
+                questionImportVo.setAnalysis(itemObject.getString("analysis"));
+                questionImportVo.setAnswer(itemObject.getString("answer"));
+                //选择题的选项
+                if("CHOICE".equals(questionImportVo.getType())){
+                    JSONArray choicesArray = itemObject.getJSONArray("choices");
+                    List<QuestionImportVo.ChoiceImportDto> choices = new ArrayList<>();
+                    for(int j = 0;j < choicesArray.size();j++){
+                        QuestionImportVo.ChoiceImportDto choiceImportDto = new QuestionImportVo.ChoiceImportDto();
+                        choiceImportDto.setContent(choicesArray.getJSONObject(j).getString("content"));
+                        choiceImportDto.setIsCorrect(choicesArray.getJSONObject(j).getBoolean("isCorrect"));
+                        choiceImportDto.setSort(choicesArray.getJSONObject(j).getInteger("sort"));
+                        choices.add(choiceImportDto);
+
+                    }
+                    questionImportVo.setChoices(choices);
+                }
+                questionImportVos.add(questionImportVo);
+            }
+            return questionImportVos;
+        }
+        throw new RuntimeException("AI生成题目结果结构错误，解析失败，具体数据为:%s".formatted(response));
+
     }
 }
