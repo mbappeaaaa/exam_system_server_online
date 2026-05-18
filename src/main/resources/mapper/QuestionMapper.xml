@@ -85,6 +85,7 @@
                qcs.is_correct,
                qcs.create_time qcs_create_time,
                qcs.update_time qcs_update_time
+        <!-- ... existing code ... -->
         from paper_question pq
         join  questions qs on pq.question_id=qs.id
         join  question_answers qas on qs.id=qas.question_id
@@ -92,6 +93,8 @@
         and qcs.is_deleted=0
         where pq.paper_id=#{paperId}
         and pq.is_deleted=0 and qs.is_deleted=0 and qas.is_deleted=0
-        order by qcs.sort;
+        order by FIELD(qs.type, 'CHOICE', 'JUDGE', 'FILL'), qcs.sort;
+        <!-- ... existing code ... -->
+
     </select>
 </mapper>

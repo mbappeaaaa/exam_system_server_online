@@ -228,8 +228,8 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     private int typeToInt(String type) {
         switch (type){
             case "CHOICE": return 1;
-            case "FILL": return 2;
-            case "JUDGE": return 3;
+            case "JUDGE": return 2;
+            case "TEXT": return 3;
             default: return 0;
         }
     }
