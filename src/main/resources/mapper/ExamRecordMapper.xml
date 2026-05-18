@@ -3,4 +3,30 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.atguigu.exam.mapper.ExamRecordMapper">
+    <select id="queryExamRanking" resultType="com.atguigu.exam.vo.ExamRankingVO">
+        SELECT
+            ers.id,
+            ers.student_name,
+            ers.exam_id,
+            ers.score,
+            p.name AS paper_name,
+            p.total_score AS paper_total_score,
+            ers.start_time,
+            ers.end_time,
+            TIMESTAMPDIFF(MINUTE, ers.start_time, ers.end_time) AS duration
+        FROM exam_records ers
+        JOIN paper p ON ers.exam_id = p.id
+        <where>
+            ers.status = '已批阅'
+            AND ers.is_deleted = 0
+            AND p.is_deleted = 0
+            <if test="paperId != null">
+                AND p.id = #{paperId}
+            </if>
+        </where>
+        ORDER BY ers.score DESC, duration ASC
+        <if test="limit!=null and limit>0">
+            LIMIT #{limit}
+        </if>
+    </select>
 </mapper>
