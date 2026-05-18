@@ -27,4 +27,11 @@ public interface QuestionMapper extends BaseMapper<Question> {
      * @return
      */
     IPage<Question> selectQuestionPage(IPage<Question> page,@Param("questionQueryVo") QuestionQueryVo questionQueryVo);
+
+    /**
+     *第二步 获取题目列表
+     * @param paperId
+     * @return
+     */
+    List<Question> selectQuestionList(Integer paperId);
 } 
