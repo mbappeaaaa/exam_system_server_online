@@ -51,7 +51,7 @@ public class VideoServiceImpl implements VideoService {
     public IPage<Video> getPublishedVideos(Integer page, Integer size, Long categoryId, String keyword, HttpServletRequest request) {
         Page<Video> pageObj = new Page<>(page, size);
         IPage<Video> result = videoMapper.getPublishedVideosPage(pageObj, categoryId, keyword);
-        
+
         // 如果有IP，填充点赞状态
         if (request != null) {
             String userIp = IpUtils.getClientIp(request);
@@ -62,7 +62,7 @@ public class VideoServiceImpl implements VideoService {
                 formatVideoInfo(video);
             });
         }
-        
+
         return result;
     }
 
@@ -72,12 +72,12 @@ public class VideoServiceImpl implements VideoService {
         if (video == null) {
             throw new RuntimeException("视频不存在");
         }
-        
+
         // 只有已发布的视频才能查看详情
         if (video.getStatus() != Video.STATUS_PUBLISHED) {
             throw new RuntimeException("视频未发布或已下架");
         }
-        
+
         // 获取分类名称并赋值
         if (video.getCategoryId() != null) {
             VideoCategory category = videoCategoryMapper.selectById(video.getCategoryId()); // 查询分类信息
@@ -89,17 +89,17 @@ public class VideoServiceImpl implements VideoService {
         } else {
             video.setCategoryName("未分类"); // 没有分类ID时显示未分类
         }
-        
+
         // 如果有IP，填充点赞状态
         if (request != null) {
             String userIp = IpUtils.getClientIp(request);
             boolean isLiked = videoLikeMapper.isLikedByIp(id, userIp);
             video.setIsLiked(isLiked);
         }
-        
+
         // 格式化信息
         formatVideoInfo(video);
-        
+
         return video;
     }
 
@@ -121,10 +121,10 @@ public class VideoServiceImpl implements VideoService {
     @Transactional
     public void recordVideoView(Long videoId, Integer viewDuration, HttpServletRequest request) {
         if (request == null) return;
-        
+
         String userIp = IpUtils.getClientIp(request);
         String userAgent = request.getHeader("User-Agent");
-        
+
         // 创建观看记录
         VideoView videoView = new VideoView();
         videoView.setVideoId(videoId);
@@ -132,9 +132,9 @@ public class VideoServiceImpl implements VideoService {
         videoView.setUserAgent(userAgent);
         videoView.setViewDuration(viewDuration);
         videoView.setCreatedAt(LocalDateTime.now());
-        
+
         videoViewMapper.insert(videoView);
-        
+
         // 增加视频观看次数
         videoMapper.incrementViewCount(videoId);
     }
@@ -145,19 +145,19 @@ public class VideoServiceImpl implements VideoService {
         if (request == null) {
             throw new RuntimeException("请求信息为空");
         }
-        
+
         String userIp = IpUtils.getClientIp(request);
         String userAgent = request.getHeader("User-Agent");
-        
+
         // 检查是否已点赞
         boolean isLiked = videoLikeMapper.isLikedByIp(videoId, userIp);
-        
+
         if (isLiked) {
             // 取消点赞
             videoLikeMapper.delete(
-                new LambdaQueryWrapper<VideoLike>()
-                    .eq(VideoLike::getVideoId, videoId)
-                    .eq(VideoLike::getUserIp, userIp)
+                    new LambdaQueryWrapper<VideoLike>()
+                            .eq(VideoLike::getVideoId, videoId)
+                            .eq(VideoLike::getUserIp, userIp)
             );
             // 减少点赞数
             videoMapper.decrementLikeCount(videoId);
@@ -169,7 +169,7 @@ public class VideoServiceImpl implements VideoService {
             videoLike.setUserIp(userIp);
             videoLike.setUserAgent(userAgent);
             videoLike.setCreatedAt(LocalDateTime.now());
-            
+
             videoLikeMapper.insert(videoLike);
             // 增加点赞数
             videoMapper.incrementLikeCount(videoId);
@@ -181,25 +181,25 @@ public class VideoServiceImpl implements VideoService {
     @Transactional
     public Map<String, Object> submitVideo(Video video, MultipartFile videoFile, MultipartFile coverFile) {
         Map<String, Object> result = new HashMap<>();
-        
+
         if (videoFile == null || videoFile.isEmpty()) {
             throw new RuntimeException("视频文件不能为空");
         }
-        
+
         try {
             // 上传视频文件
             Map<String, Object> videoUploadResult = null; //todo: 文件上传以后开放即可！
-                    // fileUploadService.uploadFile(videoFile, "videos/original/");
+            // fileUploadService.uploadFile(videoFile, "videos/original/");
             video.setFileUrl(videoUploadResult.get("url").toString());
             video.setFileSize(videoFile.getSize());
-            
+
             // 上传封面文件（可选）
             if (coverFile != null && !coverFile.isEmpty()) {
                 Map<String, Object> coverUploadResult = null; //todo： 文件上传以后开放即可
-                        // fileUploadService.uploadFile(coverFile, "videos/covers/");
+                // fileUploadService.uploadFile(coverFile, "videos/covers/");
                 video.setCoverUrl(coverUploadResult.get("url").toString());
             }
-            
+
             // 设置用户投稿默认值
             video.setUploaderType(Video.UPLOADER_TYPE_USER);
             video.setStatus(Video.STATUS_PENDING); // 待审核
@@ -207,18 +207,18 @@ public class VideoServiceImpl implements VideoService {
             video.setLikeCount(0L);
             video.setCreatedAt(LocalDateTime.now());
             video.setUpdatedAt(LocalDateTime.now());
-            
+
             // 保存视频信息
             videoMapper.insert(video);
-            
+
             result.put("success", true);
             result.put("message", "视频投稿成功，请等待审核");
             result.put("videoId", video.getId());
-            
+
         } catch (Exception e) {
             throw new RuntimeException("视频上传失败：" + e.getMessage());
         }
-        
+
         return result;
     }
 
@@ -226,13 +226,13 @@ public class VideoServiceImpl implements VideoService {
     public IPage<Video> getVideosForAdmin(Integer page, Integer size, Integer status, Integer uploaderType, String keyword) {
         Page<Video> pageObj = new Page<>(page, size);
         IPage<Video> result = videoMapper.getVideosForAdmin(pageObj, status, uploaderType, keyword);
-        
+
         // 格式化视频信息
         result.getRecords().forEach(video -> {
             formatVideoInfo(video);
             formatVideoStatus(video);
         });
-        
+
         return result;
     }
 
@@ -240,25 +240,25 @@ public class VideoServiceImpl implements VideoService {
     @Transactional
     public Map<String, Object> uploadVideoByAdmin(Video video, MultipartFile videoFile, MultipartFile coverFile, Long adminId) {
         Map<String, Object> result = new HashMap<>();
-        
+
         if (videoFile == null || videoFile.isEmpty()) {
             throw new RuntimeException("视频文件不能为空");
         }
-        
+
         try {
             // 上传视频文件 todo: 文件上传实现以后开放即可！
             Map<String, Object> videoUploadResult = null;
-                    //fileUploadService.uploadFile(videoFile, "videos/original/");
+            //fileUploadService.uploadFile(videoFile, "videos/original/");
             video.setFileUrl(videoUploadResult.get("url").toString());
             video.setFileSize(videoFile.getSize());
-            
+
             // 上传封面文件（可选）
             if (coverFile != null && !coverFile.isEmpty()) {
                 Map<String, Object> coverUploadResult = null;
-                       // fileUploadService.uploadFile(coverFile, "videos/covers/");
+                // fileUploadService.uploadFile(coverFile, "videos/covers/");
                 video.setCoverUrl(coverUploadResult.get("url").toString());
             }
-            
+
             // 设置管理员上传默认值
             video.setUploaderType(Video.UPLOADER_TYPE_ADMIN);
             video.setAdminId(adminId);
@@ -269,18 +269,18 @@ public class VideoServiceImpl implements VideoService {
             video.setLikeCount(0L);
             video.setCreatedAt(LocalDateTime.now());
             video.setUpdatedAt(LocalDateTime.now());
-            
+
             // 保存视频信息
             videoMapper.insert(video);
-            
+
             result.put("success", true);
             result.put("message", "视频上传成功");
             result.put("videoId", video.getId());
-            
+
         } catch (Exception e) {
             throw new RuntimeException("视频上传失败：" + e.getMessage());
         }
-        
+
         return result;
     }
 
@@ -291,22 +291,22 @@ public class VideoServiceImpl implements VideoService {
         if (video == null) {
             throw new RuntimeException("视频不存在");
         }
-        
+
         if (video.getStatus() != Video.STATUS_PENDING) {
             throw new RuntimeException("只能审核待审核状态的视频");
         }
-        
+
         if (status == Video.STATUS_REJECTED && (reason == null || reason.trim().isEmpty())) {
             throw new RuntimeException("拒绝审核时必须填写拒绝原因");
         }
-        
+
         // 更新审核信息
         video.setStatus(status);
         video.setAuditAdminId(adminId);
         video.setAuditTime(LocalDateTime.now());
         video.setAuditReason(reason);
         video.setUpdatedAt(LocalDateTime.now());
-        
+
         videoMapper.updateById(video);
     }
 
@@ -317,16 +317,16 @@ public class VideoServiceImpl implements VideoService {
         if (video == null) {
             throw new RuntimeException("视频不存在");
         }
-        
+
         if (video.getStatus() != Video.STATUS_PUBLISHED) {
             throw new RuntimeException("只能下架已发布的视频");
         }
-        
+
         video.setStatus(Video.STATUS_OFFLINE);
         video.setAuditAdminId(adminId);
         video.setAuditTime(LocalDateTime.now());
         video.setUpdatedAt(LocalDateTime.now());
-        
+
         videoMapper.updateById(video);
     }
 
@@ -337,14 +337,14 @@ public class VideoServiceImpl implements VideoService {
         if (video == null) {
             throw new RuntimeException("视频不存在");
         }
-        
+
         // 删除相关数据
         videoLikeMapper.delete(new LambdaQueryWrapper<VideoLike>().eq(VideoLike::getVideoId, videoId));
         videoViewMapper.delete(new LambdaQueryWrapper<VideoView>().eq(VideoView::getVideoId, videoId));
-        
+
         // 删除视频记录
         videoMapper.deleteById(videoId);
-        
+
         // TODO: 删除文件存储中的视频文件和封面文件
     }
 
@@ -356,20 +356,20 @@ public class VideoServiceImpl implements VideoService {
     @Override
     public Map<String, Object> getVideoDetailStats(Long videoId, Integer days) {
         Map<String, Object> stats = new HashMap<>();
-        
+
         // 基本统计
         Long viewCount = videoViewMapper.getViewCountByVideoId(videoId);
         Long likeCount = videoLikeMapper.getLikeCountByVideoId(videoId);
         Double avgDuration = videoViewMapper.getAverageViewDuration(videoId);
-        
+
         stats.put("viewCount", viewCount);
         stats.put("likeCount", likeCount);
         stats.put("averageViewDuration", avgDuration);
-        
+
         // 按日期统计
         List<Map<String, Object>> dailyStats = videoViewMapper.getViewStatsByDate(videoId, days);
         stats.put("dailyViewStats", dailyStats);
-        
+
         return stats;
     }
 
@@ -383,7 +383,7 @@ public class VideoServiceImpl implements VideoService {
             int seconds = video.getDuration() % 60;
             video.setDurationText(String.format("%02d:%02d", minutes, seconds));
         }
-        
+
         // 格式化文件大小
         if (video.getFileSize() != null) {
             video.setFileSizeText(formatFileSize(video.getFileSize()));
@@ -400,7 +400,7 @@ public class VideoServiceImpl implements VideoService {
         } else if (video.getUploaderType() == Video.UPLOADER_TYPE_ADMIN) {
             video.setUploaderTypeText("管理员上传");
         }
-        
+
         // 状态文本
         switch (video.getStatus()) {
             case 0:
@@ -434,4 +434,4 @@ public class VideoServiceImpl implements VideoService {
             return String.format("%.1fGB", size / (1024.0 * 1024 * 1024));
         }
     }
-} 
+}

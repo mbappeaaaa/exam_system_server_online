@@ -13,9 +13,9 @@ import java.util.Map;
  * 提供视频管理的完整业务逻辑操作
  */
 public interface VideoService {
-    
+
     // ========== 用户端接口 ==========
-    
+
     /**
      * 分页获取已发布的视频列表
      * @param page 页码
@@ -26,7 +26,7 @@ public interface VideoService {
      * @return 视频分页结果
      */
     IPage<Video> getPublishedVideos(Integer page, Integer size, Long categoryId, String keyword, HttpServletRequest request);
-    
+
     /**
      * 获取视频详情（含用户点赞状态）
      * @param id 视频ID
@@ -34,21 +34,21 @@ public interface VideoService {
      * @return 视频详情
      */
     Video getVideoDetail(Long id, HttpServletRequest request);
-    
+
     /**
      * 获取热门视频列表
      * @param limit 限制数量
      * @return 热门视频列表
      */
     List<Video> getPopularVideos(Integer limit);
-    
+
     /**
      * 获取最新视频列表
      * @param limit 限制数量
      * @return 最新视频列表
      */
     List<Video> getLatestVideos(Integer limit);
-    
+
     /**
      * 记录视频观看
      * @param videoId 视频ID
@@ -56,7 +56,7 @@ public interface VideoService {
      * @param request HTTP请求（用于获取用户IP）
      */
     void recordVideoView(Long videoId, Integer viewDuration, HttpServletRequest request);
-    
+
     /**
      * 切换视频点赞状态
      * @param videoId 视频ID
@@ -64,7 +64,7 @@ public interface VideoService {
      * @return 点赞状态：true-已点赞，false-已取消点赞
      */
     boolean toggleVideoLike(Long videoId, HttpServletRequest request);
-    
+
     /**
      * 用户投稿视频
      * @param video 视频基本信息
@@ -73,9 +73,9 @@ public interface VideoService {
      * @return 上传结果
      */
     Map<String, Object> submitVideo(Video video, MultipartFile videoFile, MultipartFile coverFile);
-    
+
     // ========== 管理端接口 ==========
-    
+
     /**
      * 管理端分页获取视频列表
      * @param page 页码
@@ -86,7 +86,7 @@ public interface VideoService {
      * @return 视频分页结果
      */
     IPage<Video> getVideosForAdmin(Integer page, Integer size, Integer status, Integer uploaderType, String keyword);
-    
+
     /**
      * 管理员上传视频
      * @param video 视频基本信息
@@ -96,7 +96,7 @@ public interface VideoService {
      * @return 上传结果
      */
     Map<String, Object> uploadVideoByAdmin(Video video, MultipartFile videoFile, MultipartFile coverFile, Long adminId);
-    
+
     /**
      * 审核视频
      * @param videoId 视频ID
@@ -105,26 +105,26 @@ public interface VideoService {
      * @param adminId 审核管理员ID
      */
     void auditVideo(Long videoId, Integer status, String reason, Long adminId);
-    
+
     /**
      * 下架视频
      * @param videoId 视频ID
      * @param adminId 管理员ID
      */
     void offlineVideo(Long videoId, Long adminId);
-    
+
     /**
      * 删除视频
      * @param videoId 视频ID
      */
     void deleteVideo(Long videoId);
-    
+
     /**
      * 获取视频统计数据
      * @return 统计数据
      */
     Map<String, Object> getVideoStatistics();
-    
+
     /**
      * 获取视频详细统计数据（观看、点赞等）
      * @param videoId 视频ID
@@ -132,4 +132,5 @@ public interface VideoService {
      * @return 详细统计数据
      */
     Map<String, Object> getVideoDetailStats(Long videoId, Integer days);
-} 
+}
+

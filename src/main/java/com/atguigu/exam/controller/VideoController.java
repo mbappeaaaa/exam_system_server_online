@@ -20,6 +20,7 @@ import java.util.Map;
  * 用户端视频控制器
  * 处理用户端视频浏览、观看、点赞、投稿等功能
  */
+@CrossOrigin
 @RestController
 @RequestMapping("/api/videos")
 @Tag(name = "视频管理(用户端)", description = "用户端视频相关操作，包括视频浏览、观看、点赞、投稿等功能")
@@ -120,8 +121,8 @@ public class VideoController {
             HttpServletRequest request) {
         boolean isLiked = videoService.toggleVideoLike(videoId, request);
         return Result.success(Map.of(
-            "isLiked", isLiked,
-            "message", isLiked ? "点赞成功" : "取消点赞成功"
+                "isLiked", isLiked,
+                "message", isLiked ? "点赞成功" : "取消点赞成功"
         ));
     }
 
@@ -148,7 +149,7 @@ public class VideoController {
             @Parameter(description = "视频时长（秒）") @RequestParam Integer duration,
             @Parameter(description = "视频文件") @RequestParam MultipartFile videoFile,
             @Parameter(description = "封面文件") @RequestParam(required = false) MultipartFile coverFile) {
-        
+
         // 构建视频对象
         Video video = new Video();
         video.setTitle(title);
@@ -157,8 +158,8 @@ public class VideoController {
         video.setTags(tags);
         video.setUploaderName(uploaderName);
         video.setDuration(duration);
-        
+
         Map<String, Object> result = videoService.submitVideo(video, videoFile, coverFile);
         return Result.success(result);
     }
-} 
+}

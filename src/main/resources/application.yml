@@ -55,3 +55,7 @@ kimi-api:
   max-tokens: 8192
   temperature: 0.3
 
+jwt:
+  secret: YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY3ODkwYWJjZGVmZ2hpamtsbW5vcA==
+  expiration: 86400000
+

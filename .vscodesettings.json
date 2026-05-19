@@ -1,0 +1,5 @@
+{
+  "maven.terminal.useJavaHome": true,
+  "java.home": "E:/HD/JDK17",
+  "maven.executable.path": "E:/HD/02JavaWeb/03Maven/apache-maven-3.9.4/bin/mvn.cmd"
+}

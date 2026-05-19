@@ -18,6 +18,7 @@ import java.util.Map;
  * 处理管理员相关的视频功能
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/api/admin/videos")
 @Tag(name = "视频管理(管理端)", description = "管理端视频相关操作，包括视频管理、审核、统计等功能")
 public class VideoAdminController {
