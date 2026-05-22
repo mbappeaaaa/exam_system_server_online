@@ -18,7 +18,7 @@ public class LoginResponseVo {
             example = "admin")
     private String username; // 用户名
     
-    @Schema(description = "用户真实姓名", 
+    @Schema(description = "用户真实姓名",
             example = "管理员")
     private String realName; // 真实姓名
     

@@ -31,7 +31,7 @@ import java.time.LocalDateTime;
 @Schema(description = "用户信息")
 public class User extends BaseEntity {
     
-    @Schema(description = "用户名，用于登录", 
+    @Schema(description = "用户名，用于登录",
             example = "admin")
     private String username;
     
